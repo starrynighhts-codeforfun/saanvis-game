@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Saanvi's Number Guesser</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a0f;
+        --surface: #12121a;
+        --card: #1a1a26;
+        --border: #2a2a3d;
+        --accent: #c8a96e;
+        --accent2: #7b6ef6;
+        --text: #f0ece4;
+        --muted: #6b6880;
+        --success: #5ecf8a;
+        --danger: #f06b6b;
+        --glow: rgba(200, 169, 110, 0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(200, 169, 110, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(200, 169, 110, 0.04) 1px, transparent 1px);
+        background-size: 44px 44px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 700px;
+        height: 700px;
+        background: radial-gradient(
+          circle,
+          rgba(123, 110, 246, 0.07) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 480px;
+        padding: 20px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 28px;
+        animation: fadeDown 0.6s ease both;
+      }
+      .header .eyebrow {
+        font-size: 11px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 8px;
+        opacity: 0.8;
+      }
+      .header h1 {
+        font-family: "Playfair Display", serif;
+        font-size: 2.7rem;
+        font-weight: 900;
+        line-height: 1.05;
+        background: linear-gradient(
+          135deg,
+          var(--text) 40%,
+          var(--accent) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .header .sub {
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 2px;
+        margin-top: 8px;
+        text-transform: uppercase;
+      }
+      .algo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(123, 110, 246, 0.1);
+        border: 1px solid rgba(123, 110, 246, 0.25);
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 10px;
+        color: var(--accent2);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-top: 12px;
+      }
+      .algo-badge .dot {
+        width: 5px;
+        height: 5px;
+        background: var(--accent2);
+        border-radius: 50%;
+        animation: pulseDot 1.5s ease infinite;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 28px;
+        animation: fadeUp 0.7s ease 0.1s both;
+        position: relative;
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent),
+          transparent
+        );
+        opacity: 0.5;
+      }
+
+      .screen {
+        display: none;
+      }
+      .screen.active {
+        display: block;
+      }
+
+      /* ── Intro ── */
+      .intro-icon {
+        font-size: 56px;
+        text-align: center;
+        margin-bottom: 16px;
+        animation: float 3s ease-in-out infinite;
+      }
+      .intro-text {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.8;
+        margin-bottom: 22px;
+      }
+      .intro-text strong {
+        color: var(--text);
+      }
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 26px;
+      }
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .step-num {
+        width: 24px;
+        height: 24px;
+        background: var(--accent2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+      }
+
+      /* ── Game ── */
+      .guess-attempt {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .attempt-label {
+        font-size: 10px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .big-guess {
+        font-family: "Playfair Display", serif;
+        font-size: 5.5rem;
+        font-weight: 900;
+        line-height: 1;
+        background: linear-gradient(
+          135deg,
+          var(--text) 30%,
+          var(--accent) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+      .guess-question {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .guess-question strong {
+        color: var(--accent);
+      }
+
+      .track-wrap {
+        margin-bottom: 22px;
+      }
+      .track-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+      }
+      .binary-track {
+        position: relative;
+        height: 8px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+      .binary-range {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, var(--accent2), var(--accent));
+        border-radius: 10px;
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        opacity: 0.45;
+      }
+      .binary-pip {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 14px;
+        height: 14px;
+        background: var(--accent);
+        border: 2px solid var(--bg);
+        border-radius: 50%;
+        box-shadow: 0 0 12px var(--accent);
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      .chances-row {
+        display: flex;
+        gap: 7px;
+        justify-content: center;
+        margin-bottom: 22px;
+      }
+      .chance-dot {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--border);
+        transition: all 0.3s ease;
+      }
+      .chance-dot.used {
+        background: var(--accent2);
+        box-shadow: 0 0 6px rgba(123, 110, 246, 0.4);
+      }
+      .chance-dot.current {
+        background: var(--accent);
+        box-shadow: 0 0 8px rgba(200, 169, 110, 0.5);
+      }
+      .chance-dot.danger {
+        background: var(--danger);
+        box-shadow: 0 0 8px rgba(240, 107, 107, 0.5);
+        animation: pulseDot 1s ease infinite;
+      }
+      .chance-dot.win {
+        background: var(--success);
+        box-shadow: 0 0 8px rgba(94, 207, 138, 0.5);
+      }
+
+      .btn-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .ans-btn {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 8px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        cursor: pointer;
+        color: var(--text);
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      .ans-btn .btn-icon {
+        font-size: 24px;
+      }
+      .ans-btn:hover {
+        transform: translateY(-3px);
+      }
+
+      .ans-btn.lower:hover {
+        border-color: var(--danger);
+        background: rgba(240, 107, 107, 0.08);
+        box-shadow: 0 6px 20px rgba(240, 107, 107, 0.2);
+        color: var(--danger);
+      }
+      .ans-btn.correct:hover {
+        border-color: var(--success);
+        background: rgba(94, 207, 138, 0.08);
+        box-shadow: 0 6px 20px rgba(94, 207, 138, 0.2);
+        color: var(--success);
+      }
+      .ans-btn.higher:hover {
+        border-color: var(--accent2);
+        background: rgba(123, 110, 246, 0.08);
+        box-shadow: 0 6px 20px rgba(123, 110, 246, 0.2);
+        color: var(--accent2);
+      }
+
+      .hint-text {
+        text-align: center;
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+      }
+
+      /* ── Result ── */
+      .result-icon {
+        font-size: 64px;
+        text-align: center;
+        margin-bottom: 14px;
+        animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+      .result-title {
+        font-family: "Playfair Display", serif;
+        font-size: 2rem;
+        text-align: center;
+        margin-bottom: 8px;
+      }
+      .result-title.win-title {
+        color: var(--accent);
+      }
+      .result-title.lose-title {
+        color: var(--danger);
+      }
+      .result-desc {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+        margin-bottom: 22px;
+      }
+      .result-desc strong {
+        color: var(--text);
+      }
+      .stat-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 22px;
+      }
+      .stat-box {
+        flex: 1;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 10px;
+        text-align: center;
+      }
+      .stat-val {
+        font-family: "Playfair Display", serif;
+        font-size: 1.8rem;
+        color: var(--accent);
+      }
+      .stat-label {
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+
+      .primary-btn {
+        display: block;
+        width: 100%;
+        background: linear-gradient(135deg, var(--accent), #a88040);
+        border: none;
+        border-radius: 12px;
+        padding: 15px;
+        font-family: "DM Mono", monospace;
+        font-size: 13px;
+        font-weight: 500;
+        color: #0a0a0f;
+        cursor: pointer;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+        margin-bottom: 10px;
+      }
+      .primary-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(200, 169, 110, 0.35);
+      }
+
+      .secondary-btn {
+        display: block;
+        width: 100%;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 13px;
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+      }
+      .secondary-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--glow);
+      }
+
+      .burst {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        pointer-events: none;
+        z-index: 999;
+      }
+      .burst-dot {
+        position: absolute;
+        border-radius: 50%;
+        animation: burstFly 1.3s ease forwards;
+      }
+
+      @keyframes fadeDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes popIn {
+        from {
+          opacity: 0;
+          transform: scale(0.5);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+      @keyframes pulseDot {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      @keyframes burstFly {
+        0% {
+          transform: translate(-50%, -50%) scale(0);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(var(--tx), var(--ty)) scale(1);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="eyebrow">✦ Mind-reading by</div>
+        <h1>Saanvi's<br />Number Guesser</h1>
+        <div class="sub">Think it · I'll find it · 7 tries max</div>
+        <div style="display: flex; justify-content: center">
+          <div class="algo-badge">
+            <span class="dot"></span>Binary Search AI
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <!-- INTRO -->
+        <div class="screen active" id="screenIntro">
+          <div class="intro-icon">🧠</div>
+          <div class="intro-text">
+            <strong>Think of any number from 1 to 100.</strong><br />
+            Keep it secret! I'll use binary search to<br />read your mind in at
+            most <strong>7 guesses</strong>.
+          </div>
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              Pick a secret number (1 – 100) in your head. Don't tell me!
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              I'll make a guess. You tell me: Too High, Correct, or Too Low.
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              Watch me zero in — binary search always wins in ≤ 7 tries!
+            </div>
+          </div>
+          <button class="primary-btn" onclick="startGame()">
+            I've got a number → Start!
+          </button>
+        </div>
+
+        <!-- GAME -->
+        <div class="screen" id="screenGame">
+          <div class="guess-attempt">
+            <div class="attempt-label" id="attemptLabel">Guess #1 of 7</div>
+            <div class="big-guess" id="bigGuess">50</div>
+            <div class="guess-question">
+              Is your number <strong id="guessQ">50</strong>?
+            </div>
+          </div>
+
+          <div class="track-wrap">
+            <div class="track-meta">
+              <span id="trackLow">1</span>
+              <span>SEARCH RANGE</span>
+              <span id="trackHigh">100</span>
+            </div>
+            <div class="binary-track">
+              <div class="binary-range" id="binaryRange"></div>
+              <div class="binary-pip" id="binaryPip"></div>
+            </div>
+          </div>
+
+          <div class="chances-row" id="chancesRow"></div>
+
+          <div class="btn-group">
+            <button class="ans-btn lower" onclick="respond('lower')">
+              <span class="btn-icon">📉</span>Too High
+            </button>
+            <button class="ans-btn correct" onclick="respond('correct')">
+              <span class="btn-icon">✅</span>Correct!
+            </button>
+            <button class="ans-btn higher" onclick="respond('higher')">
+              <span class="btn-icon">📈</span>Too Low
+            </button>
+          </div>
+          <div class="hint-text">
+            My guess is too high ← &nbsp;&nbsp;&nbsp; → My guess is too low
+          </div>
+
+          <button class="secondary-btn" onclick="resetGame()">
+            ↺ Start Over
+          </button>
+        </div>
+
+        <!-- RESULT -->
+        <div class="screen" id="screenResult">
+          <div class="result-icon" id="resultIcon">🎉</div>
+          <div class="result-title" id="resultTitle">Got it!</div>
+          <div class="result-desc" id="resultDesc"></div>
+          <div class="stat-row" id="statRow"></div>
+          <button class="primary-btn" onclick="resetGame()">
+            Play Again →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const MAX = 7;
+      let low, high, currentGuess, attempt, gameOver;
+
+      function showScreen(id) {
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+      }
+
+      function startGame() {
+        low = 1;
+        high = 100;
+        attempt = 0;
+        gameOver = false;
+        showScreen("screenGame");
+        makeGuess();
+      }
+
+      function makeGuess() {
+        attempt++;
+        currentGuess = Math.floor((low + high) / 2);
+
+        // Animate number pop
+        const bg = document.getElementById("bigGuess");
+        bg.style.animation = "none";
+        void bg.offsetHeight;
+        bg.style.animation = "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both";
+        bg.textContent = currentGuess;
+        document.getElementById("guessQ").textContent = currentGuess;
+        document.getElementById("attemptLabel").textContent =
+          `Guess #${attempt} of ${MAX}`;
+
+        updateTrack();
+        renderChances();
+      }
+
+      function respond(answer) {
+        if (gameOver) return;
+
+        if (answer === "correct") {
+          gameOver = true;
+          renderChances("win");
+          spawnBurst();
+          document.getElementById("resultIcon").textContent = "🎉";
+          document.getElementById("resultTitle").className =
+            "result-title win-title";
+          document.getElementById("resultTitle").textContent = "Got it!";
+          document.getElementById("resultDesc").innerHTML =
+            `Your number was <strong>${currentGuess}</strong>.<br>
+         Cracked it in <strong>${attempt} guess${attempt > 1 ? "es" : ""}</strong> using binary search — just like a computer!`;
+          document.getElementById("statRow").innerHTML = `
+        <div class="stat-box"><div class="stat-val">${currentGuess}</div><div class="stat-label">Your Number</div></div>
+        <div class="stat-box"><div class="stat-val">${attempt}</div><div class="stat-label">Guesses Used</div></div>
+        <div class="stat-box"><div class="stat-val">${MAX - attempt}</div><div class="stat-label">Saved</div></div>
+      `;
+          setTimeout(() => showScreen("screenResult"), 600);
+          return;
+        }
+
+        if (answer === "higher") {
+          low = currentGuess + 1; // my guess was too low → number is higher
+        } else {
+          high = currentGuess - 1; // my guess was too high → number is lower
+        }
+
+        if (low > high || attempt >= MAX) {
+          gameOver = true;
+          document.getElementById("resultIcon").textContent = "🤔";
+          document.getElementById("resultTitle").className =
+            "result-title lose-title";
+          document.getElementById("resultTitle").textContent =
+            "Wait a moment...";
+          document.getElementById("resultDesc").innerHTML =
+            `Binary search <em>always</em> finds a number in 1–100 within 7 tries.<br><br>
+         It's possible an answer was clicked by mistake. No worries — let's play again!`;
+          document.getElementById("statRow").innerHTML = `
+        <div class="stat-box"><div class="stat-val">?</div><div class="stat-label">Mystery</div></div>
+        <div class="stat-box"><div class="stat-val">${attempt}</div><div class="stat-label">Guesses</div></div>
+      `;
+          setTimeout(() => showScreen("screenResult"), 400);
+          return;
+        }
+
+        makeGuess();
+      }
+
+      function updateTrack() {
+        const leftPct = ((low - 1) / 99) * 100;
+        const rightPct = ((high - 1) / 99) * 100;
+        const midPct = ((currentGuess - 1) / 99) * 100;
+
+        document.getElementById("binaryRange").style.left = leftPct + "%";
+        document.getElementById("binaryRange").style.width =
+          Math.max(rightPct - leftPct, 1) + "%";
+        document.getElementById("binaryPip").style.left = midPct + "%";
+        document.getElementById("trackLow").textContent = low;
+        document.getElementById("trackHigh").textContent = high;
+      }
+
+      function renderChances(state) {
+        const row = document.getElementById("chancesRow");
+        row.innerHTML = "";
+        for (let i = 0; i < MAX; i++) {
+          const d = document.createElement("div");
+          d.className = "chance-dot";
+          if (state === "win") {
+            d.classList.add(i < attempt ? "win" : "");
+          } else if (i < attempt - 1) {
+            d.classList.add("used");
+          } else if (i === attempt - 1) {
+            d.classList.add(attempt === MAX ? "danger" : "current");
+          }
+          row.appendChild(d);
+        }
+      }
+
+      function resetGame() {
+        showScreen("screenIntro");
+      }
+
+      function spawnBurst() {
+        const colors = [
+          "#c8a96e",
+          "#7b6ef6",
+          "#5ecf8a",
+          "#f0e68c",
+          "#f06b6b",
+          "#a8edff",
+        ];
+        const burst = document.createElement("div");
+        burst.className = "burst";
+        for (let i = 0; i < 40; i++) {
+          const dot = document.createElement("div");
+          dot.className = "burst-dot";
+          const angle = (i / 40) * 360;
+          const dist = 90 + Math.random() * 190;
+          const size = 5 + Math.random() * 9;
+          dot.style.cssText = `
+        background:${colors[i % colors.length]};
+        --tx:${Math.cos((angle * Math.PI) / 180) * dist}px;
+        --ty:${Math.sin((angle * Math.PI) / 180) * dist}px;
+        width:${size}px;height:${size}px;
+        animation-delay:${Math.random() * 0.12}s;
+      `;
+          burst.appendChild(dot);
+        }
+        document.body.appendChild(burst);
+        setTimeout(() => burst.remove(), 1600);
+      }
+    </script>
+  </body>
+</html>
