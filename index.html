@@ -35,9 +35,12 @@
         font-family: "DM Mono", monospace;
         min-height: 100vh;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
-        overflow: hidden;
+        /* FIXED: was overflow:hidden which blocked mobile scroll */
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         position: relative;
       }
 
@@ -76,6 +79,8 @@
         width: 100%;
         max-width: 480px;
         padding: 20px;
+        /* ensure content has room to breathe on small screens */
+        padding-bottom: 40px;
       }
 
       .header {
@@ -343,6 +348,9 @@
         flex-direction: column;
         align-items: center;
         gap: 6px;
+        /* better tap targets on mobile */
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
       .ans-btn .btn-icon {
         font-size: 24px;
@@ -351,19 +359,22 @@
         transform: translateY(-3px);
       }
 
-      .ans-btn.lower:hover {
+      .ans-btn.lower:hover,
+      .ans-btn.lower:active {
         border-color: var(--danger);
         background: rgba(240, 107, 107, 0.08);
         box-shadow: 0 6px 20px rgba(240, 107, 107, 0.2);
         color: var(--danger);
       }
-      .ans-btn.correct:hover {
+      .ans-btn.correct:hover,
+      .ans-btn.correct:active {
         border-color: var(--success);
         background: rgba(94, 207, 138, 0.08);
         box-shadow: 0 6px 20px rgba(94, 207, 138, 0.2);
         color: var(--success);
       }
-      .ans-btn.higher:hover {
+      .ans-btn.higher:hover,
+      .ans-btn.higher:active {
         border-color: var(--accent2);
         background: rgba(123, 110, 246, 0.08);
         box-shadow: 0 6px 20px rgba(123, 110, 246, 0.2);
@@ -449,6 +460,8 @@
         text-transform: uppercase;
         transition: all 0.2s ease;
         margin-bottom: 10px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
       .primary-btn:hover {
         transform: translateY(-1px);
@@ -469,6 +482,8 @@
         letter-spacing: 2px;
         text-transform: uppercase;
         transition: all 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
       .secondary-btn:hover {
         border-color: var(--accent);
@@ -545,6 +560,26 @@
         100% {
           transform: translate(var(--tx), var(--ty)) scale(1);
           opacity: 0;
+        }
+      }
+
+      /* ── Responsive tweaks for small phones ── */
+      @media (max-width: 380px) {
+        .header h1 {
+          font-size: 2.2rem;
+        }
+        .big-guess {
+          font-size: 4.5rem;
+        }
+        .card {
+          padding: 20px 16px;
+        }
+        .ans-btn {
+          padding: 12px 4px;
+          font-size: 10px;
+        }
+        .ans-btn .btn-icon {
+          font-size: 20px;
         }
       }
     </style>
@@ -656,6 +691,8 @@
           .querySelectorAll(".screen")
           .forEach((s) => s.classList.remove("active"));
         document.getElementById(id).classList.add("active");
+        // scroll to top on screen change (helpful on mobile)
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
 
       function startGame() {
@@ -671,7 +708,6 @@
         attempt++;
         currentGuess = Math.floor((low + high) / 2);
 
-        // Animate number pop
         const bg = document.getElementById("bigGuess");
         bg.style.animation = "none";
         void bg.offsetHeight;
@@ -698,20 +734,20 @@
           document.getElementById("resultTitle").textContent = "Got it!";
           document.getElementById("resultDesc").innerHTML =
             `Your number was <strong>${currentGuess}</strong>.<br>
-         Cracked it in <strong>${attempt} guess${attempt > 1 ? "es" : ""}</strong> using binary search — just like a computer!`;
+             Cracked it in <strong>${attempt} guess${attempt > 1 ? "es" : ""}</strong> using binary search — just like a computer!`;
           document.getElementById("statRow").innerHTML = `
-        <div class="stat-box"><div class="stat-val">${currentGuess}</div><div class="stat-label">Your Number</div></div>
-        <div class="stat-box"><div class="stat-val">${attempt}</div><div class="stat-label">Guesses Used</div></div>
-        <div class="stat-box"><div class="stat-val">${MAX - attempt}</div><div class="stat-label">Saved</div></div>
-      `;
+            <div class="stat-box"><div class="stat-val">${currentGuess}</div><div class="stat-label">Your Number</div></div>
+            <div class="stat-box"><div class="stat-val">${attempt}</div><div class="stat-label">Guesses Used</div></div>
+            <div class="stat-box"><div class="stat-val">${MAX - attempt}</div><div class="stat-label">Saved</div></div>
+          `;
           setTimeout(() => showScreen("screenResult"), 600);
           return;
         }
 
         if (answer === "higher") {
-          low = currentGuess + 1; // my guess was too low → number is higher
+          low = currentGuess + 1;
         } else {
-          high = currentGuess - 1; // my guess was too high → number is lower
+          high = currentGuess - 1;
         }
 
         if (low > high || attempt >= MAX) {
@@ -723,11 +759,11 @@
             "Wait a moment...";
           document.getElementById("resultDesc").innerHTML =
             `Binary search <em>always</em> finds a number in 1–100 within 7 tries.<br><br>
-         It's possible an answer was clicked by mistake. No worries — let's play again!`;
+             It's possible an answer was clicked by mistake. No worries — let's play again!`;
           document.getElementById("statRow").innerHTML = `
-        <div class="stat-box"><div class="stat-val">?</div><div class="stat-label">Mystery</div></div>
-        <div class="stat-box"><div class="stat-val">${attempt}</div><div class="stat-label">Guesses</div></div>
-      `;
+            <div class="stat-box"><div class="stat-val">?</div><div class="stat-label">Mystery</div></div>
+            <div class="stat-box"><div class="stat-val">${attempt}</div><div class="stat-label">Guesses</div></div>
+          `;
           setTimeout(() => showScreen("screenResult"), 400);
           return;
         }
@@ -787,12 +823,12 @@
           const dist = 90 + Math.random() * 190;
           const size = 5 + Math.random() * 9;
           dot.style.cssText = `
-        background:${colors[i % colors.length]};
-        --tx:${Math.cos((angle * Math.PI) / 180) * dist}px;
-        --ty:${Math.sin((angle * Math.PI) / 180) * dist}px;
-        width:${size}px;height:${size}px;
-        animation-delay:${Math.random() * 0.12}s;
-      `;
+            background:${colors[i % colors.length]};
+            --tx:${Math.cos((angle * Math.PI) / 180) * dist}px;
+            --ty:${Math.sin((angle * Math.PI) / 180) * dist}px;
+            width:${size}px;height:${size}px;
+            animation-delay:${Math.random() * 0.12}s;
+          `;
           burst.appendChild(dot);
         }
         document.body.appendChild(burst);
